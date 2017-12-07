@@ -1,0 +1,3 @@
+# ethOS Autominer
+
+## Usage
