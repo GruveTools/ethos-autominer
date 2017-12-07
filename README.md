@@ -1,5 +1,7 @@
 # ethOS Autominer
 
+> _**Note:** I'm not convinced that providing the parameters in the URL for the whattomine JSON actually does anything, therefore I'd recommend manually checking with the form which coins, and this script will determine which of those coins whattomine says is most profitable at any given moment._
+
 ## Usage
 
 _Backup your `local.conf` before running this script._
