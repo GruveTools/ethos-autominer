@@ -4,7 +4,7 @@
 
 ## Usage
 
-_Backup your `local.conf` before running this script._
+_Backup your `local.conf` before running this script. You may also choose to run `force-local` on your rig to prevent override from a remote config._
 
 The script file can live in the `/home/ethos` directory on your rig. Run the script using cron at your chosen interval, such as hourly with `0 * * * *`.
 
