@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 	chdir('/home/ethos/');
 	$hour = date('H', time());
@@ -28,15 +29,15 @@
 	//$COINS['SUMO'] = array('hash_rate' => 2000.0, 'config' => 'sumokoin-sumo.conf'); // CryptoNight // Switch to exchange!!
 	$COINS['VTC'] = array('hash_rate' => 104.0, 'config' => 'miningpoolhub-vtc.conf'); // Lyra2REv2
 	//$COINS['AEON'] = array('hash_rate' => 104.0, 'config' => 'sumominer-aeon.conf'); // Lyra2REv2 // Switch to exchange!!
-	
+
 	$SMALL_COLLECT = array('ZEN'); // 'PXC', 'ZCL', 'ZEN', 'SIB'
-	
+
 	if($hour >= 22 || $hour < 10)
 	{
 		// Sleeping.. Switch to ETH.
 		if(!file_exists("in_active.conf"))
 		{
-			copy("local.conf", "in_active.conf");	
+			copy("local.conf", "in_active.conf");
 			copy("configs/nanopool-eth.conf", "local.conf");
 			sleep(5);
 			shell_exec('/opt/ethos/bin/minestop');
@@ -55,7 +56,7 @@
 				$new_coin = $SMALL_COLLECT[array_rand($SMALL_COLLECT)];
 			if($new_coin == $current_coin)
 				return;
-			
+
 			// Switch coin
 			file_put_contents('scripts/current_coin.txt', $new_coin, LOCK_EX);
 			$config_file = $COINS[$new_coin]['config'];
@@ -87,41 +88,41 @@
 			$profits = FALSE;
 
 			if(isset($data_coins['coins']) && count($data_coins['coins']) > 0)
-			{			
+			{
 				foreach($data_coins['coins'] as $label => $coin)
 				{
 					if(!isset($COINS[$coin['tag']]))
 						continue; // Skip unsupported coins.
 					if($coin['lagging'])
 						continue; // Skip lagging coins.
-					
+
 					$tag = $coin['tag'];
 					$hash_rate = $COINS[$tag]['hash_rate'];
 					$coin_id = $coin['id'];
-					
+
 					$profits[$tag] = floatval($coin['profitability']);
-					
+
 					/// BEFORE ---
 					//$json_coin = file_get_contents("http://whattomine.com/coins/$coin_id.json?hr=$hash_rate&p=0&fee=0.0&cost=0&hcost=0.0");
 					//$data_coin = json_decode($json_coin, true);
 					//$profits[$tag] = floatval($data_coin['btc_revenue']); // str_replace('$', '', $data_coin['revenue'])
 				}
 			}
-			// Output list	
+			// Output list
 			var_dump($profits);
-			
+
 			if($profits && count($profits) > 0)
 			{
 				// Sort by profit (reverse)
 				uasort($profits, 'float_rsort');
 				$new_coin = key($profits);
-				$new_profit = current($profits); 
-				
+				$new_profit = current($profits);
+
 				// Get current active coin
 				$current_coin = file_get_contents('scripts/current_coin.txt');
 				if($new_coin == $current_coin)
 					return;
-				
+
 				// Switch coin
 				file_put_contents('scripts/current_coin.txt', $new_coin, LOCK_EX);
 				$config_file = $COINS[$new_coin]['config'];
@@ -134,7 +135,7 @@
 			}
 		}
 	}
-	
+
 	function float_rsort($a, $b) {
 		if ($a == $b) {
 			return 0;
