@@ -1,6 +1,13 @@
 #!/usr/bin/env php
 <?php
 	chdir('/home/ethos/');
+	if(!file_exists('scripts')) {
+		mkdir('scripts');
+	}
+	if(!file_exists('configs')) {
+		mkdir('configs');
+	}
+
 	$hour = date('H', time());
 
 	// Config files for all algos we'd like to allow switching between:
@@ -60,7 +67,10 @@
 			}
 		}
 		// Output list
-		var_dump($profits);
+		echo "Profits:\r\n";
+		foreach($profits as $label => $profit) {
+			echo "  " . $label . " -> " . $profit . "\r\n";
+		}
 
 		if($profits && count($profits) > 0)
 		{
@@ -70,7 +80,10 @@
 			$new_profit = current($profits);
 
 			// Get current active coin
-			$current_coin = file_get_contents('scripts/current_coin.txt');
+			$current_coin = '';
+			if (file_exists('scripts/current_coin.txt')) {
+				$current_coin = file_get_contents('scripts/current_coin.txt');
+			}
 			if($new_coin == $current_coin)
 				return;
 
