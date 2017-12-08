@@ -83,17 +83,19 @@
 
 			// Switch coin
 			file_put_contents('scripts/current_coin.txt', $new_coin, LOCK_EX);
-			$config_file = $coins[$new_coin]['config'];
-			copy("configs/".$config_file, "local.conf");
-			sleep(5);
+			$output = '';
 			if(!$dry_run) {
-				shell_exec('/opt/ethos/bin/minestop');
-			}
-			sleep(5);
-			if(!$dry_run) {
-				$output = shell_exec('/opt/ethos/bin/restart-proxy 2>&1');
+				$config_file = $coins[$new_coin]['config'];
+				copy("configs/".$config_file, "local.conf");
+				sleep(5);
+				$output += shell_exec('/opt/ethos/bin/disallow 2>&1');
+				sleep(5);
+				$output += shell_exec('/opt/ethos/bin/restart-proxy 2>&1');
+				sleep(5);
+				$output +=shell_exec('/opt/ethos/bin/allow 2>&1');
+				sleep(5);
 			} else {
-				$output = 'DRY RUN';
+				$output += 'DRY RUN';
 			}
 			file_put_contents('scripts/switcher.log', date('m/d/Y H:i:s')." - Switching to $new_coin ($new_profit): $output.\r\n", FILE_APPEND | LOCK_EX);
 		}
