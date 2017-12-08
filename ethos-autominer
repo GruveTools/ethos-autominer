@@ -1,5 +1,11 @@
 #!/usr/bin/env php
 <?php
+	/**
+	 * This script adapted by Japh
+	 *
+	 * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
+	 */
+
 	$dry_run = ($argv[1] == '--dry-run' ? true : false);
 
 	echo ($dry_run ? "Dry run in progress...\r\n" : '');
