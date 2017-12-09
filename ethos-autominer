@@ -127,7 +127,7 @@
 				sleep(5);
 				$output += shell_exec('/opt/ethos/bin/disallow 2>&1');
 				sleep(5);
-				$output += shell_exec('/opt/ethos/bin/restart-proxy 2>&1');
+				$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
 				sleep(5);
 				$output +=shell_exec('/opt/ethos/bin/allow 2>&1');
 				sleep(5);
