@@ -6,7 +6,22 @@
 	 * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
 	 */
 
-	$dry_run = ($argv[1] == '--dry-run' ? true : false);
+	global $dry_run, $pushbullet_token;
+	$dry_run = false;
+	$pushbullet_token = '';
+
+	$rig = gethostname();
+
+	for ($i = 0; $i < count($argv); $i++) {
+		if ($argv[$i] == '--dry-run') {
+			$dry_run = true;
+		}
+		if ($argv[$i] == '--pushbullet') {
+			if (!empty($argv[$i+1])) {
+				$pushbullet_token = $argv[$i+1];
+			}
+		}
+	}
 
 	echo ($dry_run ? "Dry run in progress...\r\n" : '');
 
@@ -103,7 +118,11 @@
 			} else {
 				$output += 'DRY RUN';
 			}
-			file_put_contents('scripts/switcher.log', date('m/d/Y H:i:s')." - Switching to $new_coin ($new_profit): $output.\r\n", FILE_APPEND | LOCK_EX);
+			$log_msg = "[$rig] " . date('m/d/Y H:i:s') . " - Switching from $current_coin to $new_coin ($new_profit): $output.";
+			if (!empty($pushbullet_token)) {
+				pushbullet($log_msg);
+			}
+			file_put_contents('scripts/switcher.log', $log_msg . "\r\n", FILE_APPEND | LOCK_EX);
 		}
 	}
 
@@ -113,4 +132,27 @@
 			return 0;
 		}
 		return ($a > $b) ? -1 : 1;
+	}
+
+	function pushbullet($msg) {
+		global $pushbullet_token;
+
+		$data = json_encode(array(
+			'type' => 'note',
+			'title' => 'ethOS Autominer',
+			'body' => $msg,
+			//'device_iden' => 'YOUR_DEVICE_ID' // You can put a specific device ID here
+		));
+
+		$curl = curl_init();
+		curl_setopt($curl, CURLOPT_URL, 'https://api.pushbullet.com/v2/pushes');
+		curl_setopt($curl, CURLOPT_USERPWD, $pushbullet_token);
+		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST');
+		curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($data)]);
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($curl, CURLOPT_HEADER, false);
+		curl_exec($curl);
+		curl_close($curl);
+
 	}
