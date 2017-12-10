@@ -10,6 +10,8 @@ The script file can live in the `/home/ethos` directory on your rig. Run the scr
 
 You should also create a `scripts` and `configs` directory alongside the script. The `configs` directory should contain the various config files for the coins you want to mine, and you should copy the `config.sample.php` to `config.php` and edit it to refer to your config files and contain just the coins you want to switch between.
 
+You should also set the `$whattomine_url` in your new `config.php` to be correct for your rig. You can do this by going to [whattomine.com/coins](http://whattomine.com/coins), entering the details for your setup, clicking 'Calculate', and then edit the URL to replace `whattomine.com/coins` with `whattomine.com/coins.json` while leaving everything after that as it is. It'll be a very long URL, as you can see by the example one in `config.sample.php`.
+
 If you pass `--dry-run` to the script, it won't do any of the miner restarting, _but will still switch configs_.
 
 ## Background
