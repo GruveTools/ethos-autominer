@@ -6,11 +6,11 @@
 	 * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
 	 */
 
-	global $dry_run, $pushbullet_token;
+	global $dry_run, $pushbullet_token, $home_dir, $autominer_dir;
+
 	$dry_run = false;
 	$pushbullet_token = ''; // This should be set in your config.php
 	$force_coin = '';
-	$lock_file = 'scripts/no-autoswitch';
 	$whattomine_url = ''; // This should be set in your config.php
 
 	$rig = gethostname();
@@ -34,20 +34,24 @@
 		}
 	}
 
+	$home_dir = ($dry_run ? './' : '/home/ethos/');
+	$autominer_dir = $home_dir . '.autominer/';
+	$lock_file = $autominer_dir . 'no-autoswitch';
+
 	echo ($dry_run ? "Dry run in progress...\r\n" : '');
 
 	// Switch to the ethos home directory
 	if(!$dry_run) {
-		chdir('/home/ethos/');
+		chdir($home_dir);
 	}
 
 	// If there's no scripts directory, make one
-	if(!file_exists('scripts')) {
-		mkdir('scripts');
+	if(!file_exists($autominer_dir)) {
+		mkdir($autominer_dir);
 	}
 	// If there's no configs directory, make one. (Though obviously no configs directory means no configs, so we won't get far.)
-	if(!file_exists('configs')) {
-		mkdir('configs');
+	if(!file_exists($autominer_dir . 'configs/')) {
+		mkdir($autominer_dir . 'configs/');
 	}
 
 	// Get the current hour
@@ -55,11 +59,10 @@
 
 	// Config files for all algos we'd like to allow switching between
 	$coins = false;
-	if(!file_exists('config.php')) {
-		echo "Missing a config.php file, please use the config.sample.php file as a template.\r\n";
-		return false;
+	if(!file_exists($autominer_dir . 'config.php')) {
+		exit("Missing a config.php file, please use the config.sample.php file as a template.\r\n");
 	}
-	require_once('config.php');
+	require_once($autominer_dir . 'config.php');
 
 	// Check there's no no-autoswitch file in the scripts directory, manually creating this file will stop switching
 	if(!file_exists($lock_file))
@@ -113,18 +116,18 @@
 
 			// Get current active coin
 			$current_coin = '';
-			if (file_exists('scripts/current_coin.txt')) {
-				$current_coin = file_get_contents('scripts/current_coin.txt');
+			if (file_exists($autominer_dir . 'current_coin.txt')) {
+				$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
 			}
 			if($new_coin == $current_coin)
 				return;
 
 			// Switch coin
-			file_put_contents('scripts/current_coin.txt', $new_coin, LOCK_EX);
+			file_put_contents($autominer_dir . 'current_coin.txt', $new_coin, LOCK_EX);
 			$output = '';
 			if(!$dry_run) {
 				$config_file = $coins[$new_coin]['config'];
-				copy("configs/".$config_file, "local.conf");
+				copy($autominer_dir . 'configs/' . $config_file, $home_dir . 'local.conf');
 				sleep(5);
 				$output += shell_exec('/opt/ethos/bin/disallow 2>&1');
 				sleep(5);
@@ -139,7 +142,7 @@
 			if (!empty($pushbullet_token)) {
 				pushbullet($log_msg);
 			}
-			file_put_contents('scripts/switcher.log', $log_msg . "\r\n", FILE_APPEND | LOCK_EX);
+			file_put_contents($autominer_dir . 'switcher.log', $log_msg . "\r\n", FILE_APPEND | LOCK_EX);
 		}
 	}
 
@@ -171,5 +174,4 @@
 		curl_setopt($curl, CURLOPT_HEADER, false);
 		curl_exec($curl);
 		curl_close($curl);
-
 	}
