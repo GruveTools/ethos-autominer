@@ -7,6 +7,11 @@
 		$pushbullet_token = 'YOUR_PUSH_BULLET_TOKEN';
 	}
 
+        if (empty($pushover_user) && empty($pushover_token)) {
+                $pushover_user = 'YOUR_PUSHOVER_USER_KEY';
+                $pushover_token = 'YOUR_PUSHOVER_TOKEN';
+        }
+
 	$coins = [
 		'BTG' => array(
 			'hash_rate' => 0,
