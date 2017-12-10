@@ -1,15 +1,17 @@
 #!/usr/bin/env php
 <?php
 	/**
-	 * This script adapted by Japh
+	 * This script adapted by Japh & neokjames
 	 *
 	 * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
 	 */
 
-	global $dry_run, $pushbullet_token, $home_dir, $autominer_dir;
+	global $dry_run, $pushbullet_token, $pushover_user, $pushover_token, $home_dir, $autominer_dir;
 
 	$dry_run = false;
 	$pushbullet_token = ''; // This should be set in your config.php
+	$pushover_token = ''; // This should be set in your config.php
+	$pushover_user = ''; // This should be set in your config.php
 	$force_coin = '';
 	$whattomine_url = ''; // This should be set in your config.php
 
@@ -142,6 +144,9 @@
 			if (!empty($pushbullet_token)) {
 				pushbullet($log_msg);
 			}
+			if (!empty($pushover_token) && !empty($pushover_user)) {
+				pushover($log_msg);
+			}
 			file_put_contents($autominer_dir . 'switcher.log', $log_msg . "\r\n", FILE_APPEND | LOCK_EX);
 		}
 	}
@@ -175,3 +180,22 @@
 		curl_exec($curl);
 		curl_close($curl);
 	}
+	function pushover($msg) {
+		global $pushover_token;
+		global $pushover_user;
+		
+		$data = array(
+			'token' => $pushover_token,
+			'user' => $pushover_user,
+			'title' => 'ethOS Autominer',
+			'message' => $msg,
+		);
+
+        	$curl = curl_init();
+        	curl_setopt($curl, CURLOPT_URL, 'https://api.pushover.net/1/messages.json');
+        	curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($curl, CURLOPT_SAFE_UPLOAD, true);
+        	curl_exec($curl);
+        	curl_close($curl);
+   	 }
