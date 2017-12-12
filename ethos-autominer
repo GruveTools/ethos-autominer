@@ -1,15 +1,18 @@
 #!/usr/bin/env php
 <?php
 	/**
-	 * This script adapted by Japh
+	 * This script adapted by Japh & neokjames
 	 *
 	 * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
 	 */
 
-	global $dry_run, $pushbullet_token, $home_dir, $autominer_dir;
+	global $dry_run, $pushbullet_token, $pushover_user, $pushover_token, $home_dir, $autominer_dir, $switch_threshold;
 
 	$dry_run = false;
+	$switch_threshold = '';
 	$pushbullet_token = ''; // This should be set in your config.php
+	$pushover_token = ''; // This should be set in your config.php
+	$pushover_user = ''; // This should be set in your config.php
 	$force_coin = '';
 	$whattomine_url = ''; // This should be set in your config.php
 
@@ -119,8 +122,17 @@
 			if (file_exists($autominer_dir . 'current_coin.txt')) {
 				$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
 			}
+
 			if($new_coin == $current_coin)
 				return;
+
+			$coin_difference = $profits[$new_coin] - $profits[$current_coin];
+			if(($coin_difference < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
+				$noswitch_msg = "Current coin (" . $current_coin . ") is more profitable (". $profits[$current_coin] . "%) which is " . $coin_difference . "% more than ".$new_coin.", not switching. Threshold is $switch_threshold%\r\n";
+				echo " " . $noswitch_msg;
+				writelog($noswitch_msg);
+				return;
+			}
 
 			// Switch coin
 			file_put_contents($autominer_dir . 'current_coin.txt', $new_coin, LOCK_EX);
@@ -133,16 +145,14 @@
 				sleep(5);
 				$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
 				sleep(5);
-				$output +=shell_exec('/opt/ethos/bin/allow 2>&1');
+				$output += shell_exec('/opt/ethos/bin/allow 2>&1');
 				sleep(5);
 			} else {
 				$output += 'DRY RUN';
 			}
-			$log_msg = "[$rig] " . date('m/d/Y H:i:s') . " - Switching from $current_coin to $new_coin ($new_profit): $output.";
-			if (!empty($pushbullet_token)) {
-				pushbullet($log_msg);
-			}
-			file_put_contents($autominer_dir . 'switcher.log', $log_msg . "\r\n", FILE_APPEND | LOCK_EX);
+			// Log and alert the switch event
+			$log_msg = "Switching from $current_coin to $new_coin. $new_coin is ".$coin_difference."% more profitable.";
+			writelog($log_msg,true);
 		}
 	}
 
@@ -174,4 +184,40 @@
 		curl_setopt($curl, CURLOPT_HEADER, false);
 		curl_exec($curl);
 		curl_close($curl);
+	}
+	function pushover($msg) {
+		global $pushover_token;
+		global $pushover_user;
+		
+		$data = array(
+			'token' => $pushover_token,
+			'user' => $pushover_user,
+			'title' => 'ethOS Autominer',
+			'message' => $msg,
+		);
+
+        	$curl = curl_init();
+        	curl_setopt($curl, CURLOPT_URL, 'https://api.pushover.net/1/messages.json');
+        	curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($curl, CURLOPT_SAFE_UPLOAD, true);
+        	curl_exec($curl);
+        	curl_close($curl);
+   	}
+	function writelog($message,$alert = false) {
+		global $pushover_token, $pushover_user, $pushbullet_token, $autominer_dir, $rig;
+
+		// If $alert is true, send an alert with this log message
+		if($alert) {
+			$alert_message = "[$rig] " . $message;
+                        if (!empty($pushbullet_token)) {
+                                pushbullet($alert_message);
+                        }
+                        if (!empty($pushover_token) && !empty($pushover_user)) {
+                                pushover($alert_message);
+                        }
+		}
+		// Write to switcher.log including timestamp
+		$log_message = "[$rig] " . date('m/d/Y H:i:s') . " - " . $message;
+		file_put_contents($autominer_dir . 'switcher.log', $log_message . "\r\n", FILE_APPEND | LOCK_EX);
 	}
