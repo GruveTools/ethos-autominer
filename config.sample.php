@@ -12,6 +12,11 @@
                 $pushover_token = 'YOUR_PUSHOVER_TOKEN';
         }
 
+	// To set a threshold for switching, specify a percentage value below, example:
+	// $switch_threshold = 25;
+	// This will only switch coins if the new coin is 25% more profitable than the current coin.
+	$switch_threshold = '';
+
 	$coins = [
 		'BTG' => array(
 			'hash_rate' => 0,
