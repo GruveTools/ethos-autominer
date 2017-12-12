@@ -27,16 +27,16 @@ for ($i = 0; $i < count($local_conf); $i++) {
   <link rel="icon" type="image/png" href="favicon.png">
 
   <!-- Demo Dependencies -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js" type="text/javascript"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/js/bootstrap.min.js" type="text/javascript"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+  <script src="assets/js/jquery.min.js" type="text/javascript"></script>
+  <script src="assets/js/bootstrap.min.js" type="text/javascript"></script>
+  <link href="assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
 
   <!-- keen-analysis@1.2.2 -->
-  <script src="https://d26b395fwzu5fz.cloudfront.net/keen-analysis-1.2.2.js" type="text/javascript"></script>
+  <script src="assets/js/keen-analysis-1.2.2.js" type="text/javascript"></script>
 
   <!-- keen-dataviz@1.1.3 -->
-  <link href="https://d26b395fwzu5fz.cloudfront.net/keen-dataviz-1.1.3.css" rel="stylesheet" />
-  <script src="https://d26b395fwzu5fz.cloudfront.net/keen-dataviz-1.1.3.js" type="text/javascript"></script>
+  <link href="assets/css/keen-dataviz-1.1.3.css" rel="stylesheet" />
+  <script src="assets/js/keen-dataviz-1.1.3.js" type="text/javascript"></script>
 
   <!-- Dashboard -->
   <link href="assets/css/keen-dashboards.css" rel="stylesheet" type="text/css" />
@@ -94,7 +94,7 @@ for ($i = 0; $i < count($local_conf); $i++) {
 
     <hr>
 
-    <p class="small text-muted">Built with &#9829; by <a href="https://www.japh.com.au">Japh</a></p>
+    <p class="small text-muted"><a href="https://github.com/Japh/ethos-autominer">Built with &#9829;</a></p>
   </div>
 
 </body>
