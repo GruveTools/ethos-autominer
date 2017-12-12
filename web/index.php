@@ -3,14 +3,12 @@
 <head>
 <?php
 $home_dir = '/home/ethos/';
-$home_dir = '../';
 $ethos_autominer_dir = $home_dir . '.autominer/';
 require_once($ethos_autominer_dir . 'config.php');
 $current_coin = file_get_contents($ethos_autominer_dir . 'current_coin.txt');
 $local_conf = file_get_contents($home_dir . 'local.conf');
 
 $rig = gethostname();
-$rig = '58aef6';
 
 $custom_panel = '';
 $local_conf = explode("\n", $local_conf);
