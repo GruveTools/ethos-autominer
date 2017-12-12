@@ -218,6 +218,6 @@
                         }
 		}
 		// Write to switcher.log including timestamp
-		$log_message = date('m/d/Y H:i:s') . " " . $message;
+		$log_message = "[$rig] " . date('m/d/Y H:i:s') . " - " . $message;
 		file_put_contents($autominer_dir . 'switcher.log', $log_message . "\r\n", FILE_APPEND | LOCK_EX);
 	}
