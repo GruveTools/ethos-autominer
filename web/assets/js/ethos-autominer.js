@@ -26,7 +26,11 @@ Keen.ready(function(){
   .prepare();
 
   fetchPanelData();
+  fetchPanelHashrate();
+  fetchPanelTemp();
   setInterval(fetchPanelData, refresh_interval * 1000);
+  setInterval(fetchPanelHashrate, refresh_interval * 1000);
+  setInterval(fetchPanelTemp, refresh_interval * 1000);
 });
 
 function fetchPanelData() {
@@ -48,62 +52,28 @@ function fetchPanelData() {
     overviewList.append(jQuery('<li>').html('<strong>Rig uptime:</strong> ' + humanTime(rigData.uptime)));
     overviewList.append(jQuery('<li>').html('<strong>Miner running time:</strong> ' + humanTime(rigData.miner_secs)));
 
-    var hashrates = rigData.miner_hashes.split(' ');
-    var temperatures = rigData.temp.split(' ');
+  });
+}
 
-    var now = new Date().toISOString();
-
-    var hashrate_row = {
-      value: [],
-      timeframe: {
-        start: now,
-        end: now
-      }
-    };
-
-    var temperature_row = {
-      value: [],
-      timeframe: {
-        start: now,
-        end: now
-      }
-    };
-
-    for (var i = 0; i < hashrates.length; i++) {
-      hashrate_row.value.push({
-        gpu: "GPU #" + i,
-        result: hashrates[i]
-      })
-    }
-
-    for (var i = 0; i < temperatures.length; i++) {
-      temperature_row.value.push({
-        gpu: "GPU #" + i,
-        result: temperatures[i]
-      })
-    }
-
-    hashrate_data.result.push(hashrate_row);
-    temperature_data.result.push(temperature_row);
-
-    if (hashrate_data.result.length > refresh_interval) {
-      hashrate_data.result.shift();
-    }
-
-    if (temperature_data.result.length > refresh_interval) {
-      temperature_data.result.shift();
-    }
-
+function fetchPanelHashrate() {
+  var since = (new Date().getTime() / 1000) - 1440;
+  jQuery.getJSON('/stats.php?metric=miner_hashes&since=' + since, function(data) {
     hashrate_timeline
-      .data(hashrate_data)
+      .data(data)
+      .stacked(true)
       .sortGroups('desc')
       .render();
+  });
+}
 
+function fetchPanelTemp() {
+  var since = (new Date().getTime() / 1000) - 1440;
+  jQuery.getJSON('/stats.php?metric=temp&since=' + since, function(data) {
     temperature_timeline
-      .data(temperature_data)
+      .data(data)
+      .stacked(false)
       .sortGroups('desc')
       .render();
-
   });
 }
 
