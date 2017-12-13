@@ -122,6 +122,8 @@ if(!file_exists($lock_file))
 			$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
 		}
 
+		gather();
+
 		if($new_coin == $current_coin)
 			return;
 
@@ -147,7 +149,6 @@ if(!file_exists($lock_file))
 				$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
 				sleep(5);
 				$output += shell_exec('/opt/ethos/bin/allow 2>&1');
-				sleep(5);
 			} else {
 				$output += 'DRY RUN';
 			}
@@ -233,7 +234,7 @@ function get_whattomine($url) {
 	$cache_hash = $autominer_dir . md5($url) . '.cache';
 	$json_coins = '';
 
-	if (file_exists($cache_hash) && (date('U') - file_mtime($cache_hash) > 300)) {
+	if (file_exists($cache_hash) && (date('U') - filemtime($cache_hash) < 300)) {
 		$json_coins = file_get_contents($cache_hash);
 	} else {
 		$json_coins = file_get_contents($url);
@@ -243,4 +244,75 @@ function get_whattomine($url) {
 	$data_coins = json_decode($json_coins, true);
 
 	return $data_coins;
+}
+
+function gather() {
+	global $autominer_dir, $rig;
+	$gatherData = null;
+
+	$timestamp = date('U');
+
+	// Create / Load database for stats
+	if (!file_exists($autominer_dir . 'db.json')) {
+		$gatherData = json_decode('{}');
+	} else {
+		$gatherData = json_decode(file_get_contents($autominer_dir . 'db.json'));
+	}
+
+	// Retrieve ethOS stats
+	$stats_output = shell_exec('/opt/ethos/bin/show stats');
+
+	$stats_lines = explode("\n", $stats_output);
+
+	if (!is_array($gatherData->stats)) {
+		$gatherData->stats = [];
+	}
+
+	// Process stats and add to database
+	$stat = new \stdClass();
+	$stat->timestamp = $timestamp;
+	$previous_key = '';
+	$key = '';
+	$previous_val = '';
+	for ($i = 0; $i < count($stats_lines); $i++) {
+		$data = explode(': ', $stats_lines[$i]);
+
+		if (empty(trim($data[0])) && empty(trim($data[1])))
+			continue;
+
+		if (empty($data[1])) {
+			$data[1] = $data[0];
+			$data[0] = '';
+		}
+
+		if (!empty(trim($data[0]))) {
+			$key = trim($data[0]);
+			$previous_key = $key;
+			$val = trim($data[1]);
+			$previous_val = $val;
+		} else {
+			$key = $previous_key;
+			if (is_array($stat->data->$key)) {
+				$val = $stat->data->$key;
+				array_push($val, trim($data[1]));
+			} else {
+				$val = [];
+				array_push($val, $previous_val);
+				array_push($val, trim($data[1]));
+			}
+		}
+		if (empty($stat->data)) {
+			$stat->data = new \stdClass();
+		}
+		$stat->data->$key = $val;
+	}
+	array_push($gatherData->stats, $stat);
+
+	// If the first stat is more than 1 week old, remove it. Only keeping 1 week of data.
+	if ($timestamp - $gatherData->stats[0]->timestamp > 604800) {
+		array_shift($gatherData->stats);
+	}
+
+	// Save to file
+	file_put_contents($autominer_dir . 'db.json', json_encode($gatherData, JSON_PRETTY_PRINT), LOCK_EX);
 }
