@@ -126,6 +126,9 @@
 			if($new_coin == $current_coin)
 				return;
 
+			if($coins[$new_coin]['config'] == $coins[$current_coin]['config'])
+				return;
+
 			$coin_difference = $profits[$new_coin] - $profits[$current_coin];
 			if(($coin_difference < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
 				$noswitch_msg = "Current coin (" . $current_coin . ") is more profitable (". $profits[$current_coin] . "%) which is " . $coin_difference . "% more than ".$new_coin.", not switching. Threshold is $switch_threshold%\r\n";
@@ -188,7 +191,7 @@
 	function pushover($msg) {
 		global $pushover_token;
 		global $pushover_user;
-		
+
 		$data = array(
 			'token' => $pushover_token,
 			'user' => $pushover_user,
