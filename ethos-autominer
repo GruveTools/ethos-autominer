@@ -234,7 +234,7 @@ function get_whattomine($url) {
 	$cache_hash = $autominer_dir . md5($url) . '.cache';
 	$json_coins = '';
 
-	if (file_exists($cache_hash) && (date('U') - file_mtime($cache_hash) > 300)) {
+	if (file_exists($cache_hash) && (date('U') - filemtime($cache_hash) > 300)) {
 		$json_coins = file_get_contents($cache_hash);
 	} else {
 		$json_coins = file_get_contents($url);
