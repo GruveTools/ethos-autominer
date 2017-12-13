@@ -24,6 +24,10 @@ To get up and running, you need to do the following:
 
 You can also run the script manually, and if you pass `--dry-run` to the script, it won't do any of the miner restarting, _but will still switch configs_.
 
+## Donations
+
+You can send BTC donations to `3Ckx1eocUY5fHinbDXZtCGGqwdT1VwGBa4`.
+
 ## Credits
 
 This script has been adapted by [Japh](https://github.com/japh) and [neokjames](https://github.com/neokjames).
