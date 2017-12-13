@@ -200,13 +200,13 @@ function pushover($msg) {
 		'message' => $msg,
 	);
 
-		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, 'https://api.pushover.net/1/messages.json');
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+	$curl = curl_init();
+	curl_setopt($curl, CURLOPT_URL, 'https://api.pushover.net/1/messages.json');
+	curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($curl, CURLOPT_SAFE_UPLOAD, true);
-		curl_exec($curl);
-		curl_close($curl);
+	curl_exec($curl);
+	curl_close($curl);
 }
 function writelog($message,$alert = false) {
 	global $pushover_token, $pushover_user, $pushbullet_token, $autominer_dir, $rig;
@@ -214,12 +214,12 @@ function writelog($message,$alert = false) {
 	// If $alert is true, send an alert with this log message
 	if($alert) {
 		$alert_message = "[$rig] " . $message;
-					if (!empty($pushbullet_token)) {
-							pushbullet($alert_message);
-					}
-					if (!empty($pushover_token) && !empty($pushover_user)) {
-							pushover($alert_message);
-					}
+		if (!empty($pushbullet_token)) {
+			pushbullet($alert_message);
+		}
+		if (!empty($pushover_token) && !empty($pushover_user)) {
+			pushover($alert_message);
+		}
 	}
 	// Write to switcher.log including timestamp
 	$log_message = "[$rig] " . date('m/d/Y H:i:s') . " - " . $message;
