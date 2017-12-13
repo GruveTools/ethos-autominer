@@ -122,6 +122,8 @@ if(!file_exists($lock_file))
 			$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
 		}
 
+		gather();
+
 		if($new_coin == $current_coin)
 			return;
 
@@ -147,7 +149,6 @@ if(!file_exists($lock_file))
 				$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
 				sleep(5);
 				$output += shell_exec('/opt/ethos/bin/allow 2>&1');
-				sleep(5);
 			} else {
 				$output += 'DRY RUN';
 			}
@@ -243,4 +244,36 @@ function get_whattomine($url) {
 	$data_coins = json_decode($json_coins, true);
 
 	return $data_coins;
+}
+
+function gather() {
+	global $autominer_dir, $rig;
+	$gatherData = null;
+	$timestamp = date('U');
+	if (!file_exists($autominer_dir . 'db.json')) {
+		$gatherData = json_decode('{}');
+	} else {
+		$gatherData = json_decode(file_get_contents($autominer_dir . 'db.json'));
+	}
+
+	$stats_output = shell_exec('/opt/ethos/bin/show stats');
+	$stats_lines = explode("\n", $stats_output);
+
+	if (!is_array($gatherData->stats)) {
+		$gatherData->stats = [];
+	}
+
+	$stat = new \stdClass();
+	$stat->timestamp = $timestamp;
+	for ($i = 0; $i < count($stats_lines); $i++) {
+		$clean = preg_replace('/\s\s+/', ' ', $stats_lines[$i]);
+		$data = explode(': ', $clean);
+		if (count($data) > 1) {
+			$stat->data = new \stdClass();
+			$stat->data->$data[0] = $data[1];
+		}
+	}
+	array_push($gatherData->stats, $stat);
+
+	file_put_contents($autominer_dir . 'db.json', json_encode($gatherData, JSON_PRETTY_PRINT), LOCK_EX);
 }
