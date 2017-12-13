@@ -71,8 +71,7 @@ require_once($autominer_dir . 'config.php');
 if(!file_exists($lock_file))
 {
 	// Get current profitability from whattomine, still not sure if the querystring parameters are used
-	$json_coins = file_get_contents($whattomine_url);
-	$data_coins = json_decode($json_coins, true);
+	$data_coins = get_whattomine($whattomine_url);
 	$profits = false;
 
 	if(isset($data_coins['coins']) && count($data_coins['coins']) > 0)
@@ -226,4 +225,22 @@ function writelog($message,$alert = false) {
 	// Write to switcher.log including timestamp
 	$log_message = "[$rig] " . date('m/d/Y H:i:s') . " - " . $message;
 	file_put_contents($autominer_dir . 'switcher.log', $log_message . "\r\n", FILE_APPEND | LOCK_EX);
+}
+
+function get_whattomine($url) {
+	global $autominer_dir;
+
+	$cache_hash = $autominer_dir . md5($url) . '.cache';
+	$json_coins = '';
+
+	if (file_exists($cache_hash) && (date('U') - file_mtime($cache_hash) > 300)) {
+		$json_coins = file_get_contents($cache_hash);
+	} else {
+		$json_coins = file_get_contents($url);
+		file_put_contents($cache_hash, $json_coins);
+	}
+
+	$data_coins = json_decode($json_coins, true);
+
+	return $data_coins;
 }
