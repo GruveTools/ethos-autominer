@@ -71,8 +71,7 @@ require_once($autominer_dir . 'config.php');
 if(!file_exists($lock_file))
 {
 	// Get current profitability from whattomine, still not sure if the querystring parameters are used
-	$json_coins = file_get_contents($whattomine_url);
-	$data_coins = json_decode($json_coins, true);
+	$data_coins = get_whattomine($whattomine_url);
 	$profits = false;
 
 	if(isset($data_coins['coins']) && count($data_coins['coins']) > 0)
@@ -123,8 +122,6 @@ if(!file_exists($lock_file))
 			$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
 		}
 
-		gather();
-
 		if($new_coin == $current_coin)
 			return;
 
@@ -150,6 +147,7 @@ if(!file_exists($lock_file))
 				$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
 				sleep(5);
 				$output += shell_exec('/opt/ethos/bin/allow 2>&1');
+				sleep(5);
 			} else {
 				$output += 'DRY RUN';
 			}
@@ -190,6 +188,7 @@ function pushbullet($msg) {
 	curl_exec($curl);
 	curl_close($curl);
 }
+
 function pushover($msg) {
 	global $pushover_token;
 	global $pushover_user;
@@ -209,6 +208,7 @@ function pushover($msg) {
 	curl_exec($curl);
 	curl_close($curl);
 }
+
 function writelog($message,$alert = false) {
 	global $pushover_token, $pushover_user, $pushbullet_token, $autominer_dir, $rig;
 
@@ -227,34 +227,20 @@ function writelog($message,$alert = false) {
 	file_put_contents($autominer_dir . 'switcher.log', $log_message . "\r\n", FILE_APPEND | LOCK_EX);
 }
 
-function gather() {
-	global $autominer_dir, $rig;
-	$gatherData = null;
-	$timestamp = date('U');
-	if (!file_exists($autominer_dir . 'db.json')) {
-		$gatherData = json_decode('{}');
+function get_whattomine($url) {
+	global $autominer_dir;
+
+	$cache_hash = $autominer_dir . md5($url) . '.cache';
+	$json_coins = '';
+
+	if (file_exists($cache_hash) && (date('U') - file_mtime($cache_hash) > 300)) {
+		$json_coins = file_get_contents($cache_hash);
 	} else {
-		$gatherData = json_decode(file_get_contents($autominer_dir . 'db.json'));
+		$json_coins = file_get_contents($url);
+		file_put_contents($cache_hash, $json_coins, LOCK_EX);
 	}
 
-	$stats_output = shell_exec('/opt/ethos/bin/show stats');
-	$stats_lines = explode("\n", $stats_output);
+	$data_coins = json_decode($json_coins, true);
 
-	if (!is_array($gatherData->stats)) {
-		$gatherData->stats = [];
-	}
-
-	$stat = new \stdClass();
-	$stat->timestamp = $timestamp;
-	for ($i = 0; $i < count($stats_lines); $i++) {
-		$clean = preg_replace('/\s\s+/', ' ', $stats_lines[$i]);
-		$data = explode(': ', $clean);
-		if (count($data) > 1) {
-			$stat->data = new \stdClass();
-			$stat->data->$data[0] = $data[1];
-		}
-	}
-	array_push($gatherData->stats, $stat);
-
-	file_put_contents($autominer_dir . 'db.json', json_encode($gatherData, JSON_PRETTY_PRINT), LOCK_EX);
+	return $data_coins;
 }
