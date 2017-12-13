@@ -126,9 +126,6 @@
 			if($new_coin == $current_coin)
 				return;
 
-			if($coins[$new_coin]['config'] == $coins[$current_coin]['config'])
-				return;
-
 			$coin_difference = $profits[$new_coin] - $profits[$current_coin];
 			if(($coin_difference < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
 				$noswitch_msg = "Current coin (" . $current_coin . ") is more profitable (". $profits[$current_coin] . "%) which is " . $coin_difference . "% more than ".$new_coin.", not switching. Threshold is $switch_threshold%\r\n";
@@ -139,20 +136,24 @@
 
 			// Switch coin
 			file_put_contents($autominer_dir . 'current_coin.txt', $new_coin, LOCK_EX);
-			$output = '';
-			if(!$dry_run) {
-				$config_file = $coins[$new_coin]['config'];
-				copy($autominer_dir . 'configs/' . $config_file, $home_dir . 'local.conf');
-				sleep(5);
-				$output += shell_exec('/opt/ethos/bin/disallow 2>&1');
-				sleep(5);
-				$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
-				sleep(5);
-				$output += shell_exec('/opt/ethos/bin/allow 2>&1');
-				sleep(5);
-			} else {
-				$output += 'DRY RUN';
+
+			if($coins[$new_coin]['config'] != $coins[$current_coin]['config']) {
+				$output = '';
+				if(!$dry_run) {
+					$config_file = $coins[$new_coin]['config'];
+					copy($autominer_dir . 'configs/' . $config_file, $home_dir . 'local.conf');
+					sleep(5);
+					$output += shell_exec('/opt/ethos/bin/disallow 2>&1');
+					sleep(5);
+					$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
+					sleep(5);
+					$output += shell_exec('/opt/ethos/bin/allow 2>&1');
+					sleep(5);
+				} else {
+					$output += 'DRY RUN';
+				}
 			}
+
 			// Log and alert the switch event
 			$log_msg = "Switching from $current_coin to $new_coin. $new_coin is ".$coin_difference."% more profitable.";
 			writelog($log_msg,true);
