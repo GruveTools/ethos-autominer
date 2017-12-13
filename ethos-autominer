@@ -1,227 +1,227 @@
 #!/usr/bin/env php
 <?php
-	/**
-	 * This script adapted by Japh & neokjames
-	 *
-	 * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
-	 */
+/**
+ * This script adapted by Japh & neokjames
+ *
+ * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
+ */
 
-	global $dry_run, $pushbullet_token, $pushover_user, $pushover_token, $home_dir, $autominer_dir, $switch_threshold;
+global $dry_run, $pushbullet_token, $pushover_user, $pushover_token, $home_dir, $autominer_dir, $switch_threshold;
 
-	$dry_run = false;
-	$switch_threshold = '';
-	$pushbullet_token = ''; // This should be set in your config.php
-	$pushover_token = ''; // This should be set in your config.php
-	$pushover_user = ''; // This should be set in your config.php
-	$force_coin = '';
-	$whattomine_url = ''; // This should be set in your config.php
+$dry_run = false;
+$switch_threshold = '';
+$pushbullet_token = ''; // This should be set in your config.php
+$pushover_token = ''; // This should be set in your config.php
+$pushover_user = ''; // This should be set in your config.php
+$force_coin = '';
+$whattomine_url = ''; // This should be set in your config.php
 
-	$rig = gethostname();
+$rig = gethostname();
 
-	for ($i = 0; $i < count($argv); $i++) {
-		if ($argv[$i] == '--dry-run') {
-			$dry_run = true;
-		}
-		if ($argv[$i] == '--pushbullet') {
-			if (!empty($argv[$i+1])) {
-				$pushbullet_token = $argv[$i+1];
-			}
-		}
-		if ($argv[$i] == '--force') {
-			if (!empty($argv[$i+1])) {
-				$force_coin = $argv[$i+1];
-			}
-		}
-		if ($argv[$i] == '--unlock') {
-			unlink($lock_file);
+for ($i = 0; $i < count($argv); $i++) {
+	if ($argv[$i] == '--dry-run') {
+		$dry_run = true;
+	}
+	if ($argv[$i] == '--pushbullet') {
+		if (!empty($argv[$i+1])) {
+			$pushbullet_token = $argv[$i+1];
 		}
 	}
-
-	$home_dir = ($dry_run ? './' : '/home/ethos/');
-	$autominer_dir = $home_dir . '.autominer/';
-	$lock_file = $autominer_dir . 'no-autoswitch';
-
-	echo ($dry_run ? "Dry run in progress...\r\n" : '');
-
-	// Switch to the ethos home directory
-	if(!$dry_run) {
-		chdir($home_dir);
+	if ($argv[$i] == '--force') {
+		if (!empty($argv[$i+1])) {
+			$force_coin = $argv[$i+1];
+		}
 	}
-
-	// If there's no scripts directory, make one
-	if(!file_exists($autominer_dir)) {
-		mkdir($autominer_dir);
+	if ($argv[$i] == '--unlock') {
+		unlink($lock_file);
 	}
-	// If there's no configs directory, make one. (Though obviously no configs directory means no configs, so we won't get far.)
-	if(!file_exists($autominer_dir . 'configs/')) {
-		mkdir($autominer_dir . 'configs/');
-	}
+}
 
-	// Get the current hour
-	$hour = date('H', time());
+$home_dir = ($dry_run ? './' : '/home/ethos/');
+$autominer_dir = $home_dir . '.autominer/';
+$lock_file = $autominer_dir . 'no-autoswitch';
 
-	// Config files for all algos we'd like to allow switching between
-	$coins = false;
-	if(!file_exists($autominer_dir . 'config.php')) {
-		exit("Missing a config.php file, please use the config.sample.php file as a template.\r\n");
-	}
-	require_once($autominer_dir . 'config.php');
+echo ($dry_run ? "Dry run in progress...\r\n" : '');
 
-	// Check there's no no-autoswitch file in the scripts directory, manually creating this file will stop switching
-	if(!file_exists($lock_file))
+// Switch to the ethos home directory
+if(!$dry_run) {
+	chdir($home_dir);
+}
+
+// If there's no scripts directory, make one
+if(!file_exists($autominer_dir)) {
+	mkdir($autominer_dir);
+}
+// If there's no configs directory, make one. (Though obviously no configs directory means no configs, so we won't get far.)
+if(!file_exists($autominer_dir . 'configs/')) {
+	mkdir($autominer_dir . 'configs/');
+}
+
+// Get the current hour
+$hour = date('H', time());
+
+// Config files for all algos we'd like to allow switching between
+$coins = false;
+if(!file_exists($autominer_dir . 'config.php')) {
+	exit("Missing a config.php file, please use the config.sample.php file as a template.\r\n");
+}
+require_once($autominer_dir . 'config.php');
+
+// Check there's no no-autoswitch file in the scripts directory, manually creating this file will stop switching
+if(!file_exists($lock_file))
+{
+	// Get current profitability from whattomine, still not sure if the querystring parameters are used
+	$json_coins = file_get_contents($whattomine_url);
+	$data_coins = json_decode($json_coins, true);
+	$profits = false;
+
+	if(isset($data_coins['coins']) && count($data_coins['coins']) > 0)
 	{
-		// Get current profitability from whattomine, still not sure if the querystring parameters are used
-		$json_coins = file_get_contents($whattomine_url);
-		$data_coins = json_decode($json_coins, true);
-		$profits = false;
-
-		if(isset($data_coins['coins']) && count($data_coins['coins']) > 0)
+		// Run through all coins returned by whattomine and get profitability of ones we're interested in
+		foreach($data_coins['coins'] as $label => $coin)
 		{
-			// Run through all coins returned by whattomine and get profitability of ones we're interested in
-			foreach($data_coins['coins'] as $label => $coin)
-			{
-				if(!isset($coins[$coin['tag']]))
-					continue; // Skip unsupported coins.
-				if($coin['lagging'])
-					continue; // Skip lagging coins.
+			if(!isset($coins[$coin['tag']]))
+				continue; // Skip unsupported coins.
+			if($coin['lagging'])
+				continue; // Skip lagging coins.
 
-				$tag = $coin['tag'];
-				$hash_rate = $coins[$tag]['hash_rate'];
-				$coin_id = $coin['id'];
+			$tag = $coin['tag'];
+			$hash_rate = $coins[$tag]['hash_rate'];
+			$coin_id = $coin['id'];
 
-				$profits[$tag] = floatval($coin['profitability']);
+			$profits[$tag] = floatval($coin['profitability']);
 
-				/// Looks like the original author had plans to go deeper...
-				//$json_coin = file_get_contents("http://whattomine.com/coins/$coin_id.json?hr=$hash_rate&p=0&fee=0.0&cost=0&hcost=0.0");
-				//$data_coin = json_decode($json_coin, true);
-				//$profits[$tag] = floatval($data_coin['btc_revenue']); // str_replace('$', '', $data_coin['revenue'])
-			}
-		}
-
-		// Output list
-		echo "Profits:\r\n";
-		foreach($profits as $label => $profit) {
-			echo "  " . $label . " -> " . $profit . "\r\n";
-		}
-
-		if($profits && count($profits) > 0)
-		{
-			// Sort by profit (reverse)
-			uasort($profits, 'float_rsort');
-			$new_coin = key($profits);
-			$new_profit = current($profits);
-
-			if (!empty($force_coin)) {
-				echo " Forcing switch to " . $force_coin . "\r\n";
-				$new_coin = $force_coin;
-				file_put_contents($lock_file, $force_coin, LOCK_EX);
-			}
-
-			// Get current active coin
-			$current_coin = '';
-			if (file_exists($autominer_dir . 'current_coin.txt')) {
-				$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
-			}
-
-			if($new_coin == $current_coin)
-				return;
-
-			$coin_difference = $profits[$new_coin] - $profits[$current_coin];
-			if(($coin_difference < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
-				$noswitch_msg = "Current coin (" . $current_coin . ") is more profitable (". $profits[$current_coin] . "%) which is " . $coin_difference . "% more than ".$new_coin.", not switching. Threshold is $switch_threshold%\r\n";
-				echo " " . $noswitch_msg;
-				writelog($noswitch_msg);
-				return;
-			}
-
-			// Switch coin
-			file_put_contents($autominer_dir . 'current_coin.txt', $new_coin, LOCK_EX);
-
-			if($coins[$new_coin]['config'] != $coins[$current_coin]['config']) {
-				$output = '';
-				if(!$dry_run) {
-					$config_file = $coins[$new_coin]['config'];
-					copy($autominer_dir . 'configs/' . $config_file, $home_dir . 'local.conf');
-					sleep(5);
-					$output += shell_exec('/opt/ethos/bin/disallow 2>&1');
-					sleep(5);
-					$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
-					sleep(5);
-					$output += shell_exec('/opt/ethos/bin/allow 2>&1');
-					sleep(5);
-				} else {
-					$output += 'DRY RUN';
-				}
-			}
-
-			// Log and alert the switch event
-			$log_msg = "Switching from $current_coin to $new_coin. $new_coin is ".$coin_difference."% more profitable.";
-			writelog($log_msg,true);
+			/// Looks like the original author had plans to go deeper...
+			//$json_coin = file_get_contents("http://whattomine.com/coins/$coin_id.json?hr=$hash_rate&p=0&fee=0.0&cost=0&hcost=0.0");
+			//$data_coin = json_decode($json_coin, true);
+			//$profits[$tag] = floatval($data_coin['btc_revenue']); // str_replace('$', '', $data_coin['revenue'])
 		}
 	}
 
-	// Function for reverse order sorting
-	function float_rsort($a, $b) {
-		if ($a == $b) {
-			return 0;
-		}
-		return ($a > $b) ? -1 : 1;
+	// Output list
+	echo "Profits:\r\n";
+	foreach($profits as $label => $profit) {
+		echo "  " . $label . " -> " . $profit . "\r\n";
 	}
 
-	function pushbullet($msg) {
-		global $pushbullet_token;
+	if($profits && count($profits) > 0)
+	{
+		// Sort by profit (reverse)
+		uasort($profits, 'float_rsort');
+		$new_coin = key($profits);
+		$new_profit = current($profits);
 
-		$data = json_encode(array(
-			'type' => 'note',
-			'title' => 'ethOS Autominer',
-			'body' => $msg,
-			//'device_iden' => 'YOUR_DEVICE_ID' // You can put a specific device ID here
-		));
+		if (!empty($force_coin)) {
+			echo " Forcing switch to " . $force_coin . "\r\n";
+			$new_coin = $force_coin;
+			file_put_contents($lock_file, $force_coin, LOCK_EX);
+		}
+
+		// Get current active coin
+		$current_coin = '';
+		if (file_exists($autominer_dir . 'current_coin.txt')) {
+			$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
+		}
+
+		if($new_coin == $current_coin)
+			return;
+
+		$coin_difference = $profits[$new_coin] - $profits[$current_coin];
+		if(($coin_difference < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
+			$noswitch_msg = "Current coin (" . $current_coin . ") is more profitable (". $profits[$current_coin] . "%) which is " . $coin_difference . "% more than ".$new_coin.", not switching. Threshold is $switch_threshold%\r\n";
+			echo " " . $noswitch_msg;
+			writelog($noswitch_msg);
+			return;
+		}
+
+		// Switch coin
+		file_put_contents($autominer_dir . 'current_coin.txt', $new_coin, LOCK_EX);
+
+		if($coins[$new_coin]['config'] != $coins[$current_coin]['config']) {
+			$output = '';
+			if(!$dry_run) {
+				$config_file = $coins[$new_coin]['config'];
+				copy($autominer_dir . 'configs/' . $config_file, $home_dir . 'local.conf');
+				sleep(5);
+				$output += shell_exec('/opt/ethos/bin/disallow 2>&1');
+				sleep(5);
+				$output += shell_exec('/opt/ethos/bin/minestop 2>&1');
+				sleep(5);
+				$output += shell_exec('/opt/ethos/bin/allow 2>&1');
+				sleep(5);
+			} else {
+				$output += 'DRY RUN';
+			}
+		}
+
+		// Log and alert the switch event
+		$log_msg = "Switching from $current_coin to $new_coin. $new_coin is ".$coin_difference."% more profitable.";
+		writelog($log_msg,true);
+	}
+}
+
+// Function for reverse order sorting
+function float_rsort($a, $b) {
+	if ($a == $b) {
+		return 0;
+	}
+	return ($a > $b) ? -1 : 1;
+}
+
+function pushbullet($msg) {
+	global $pushbullet_token;
+
+	$data = json_encode(array(
+		'type' => 'note',
+		'title' => 'ethOS Autominer',
+		'body' => $msg,
+		//'device_iden' => 'YOUR_DEVICE_ID' // You can put a specific device ID here
+	));
+
+	$curl = curl_init();
+	curl_setopt($curl, CURLOPT_URL, 'https://api.pushbullet.com/v2/pushes');
+	curl_setopt($curl, CURLOPT_USERPWD, $pushbullet_token);
+	curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST');
+	curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($data)]);
+	curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($curl, CURLOPT_HEADER, false);
+	curl_exec($curl);
+	curl_close($curl);
+}
+function pushover($msg) {
+	global $pushover_token;
+	global $pushover_user;
+
+	$data = array(
+		'token' => $pushover_token,
+		'user' => $pushover_user,
+		'title' => 'ethOS Autominer',
+		'message' => $msg,
+	);
 
 		$curl = curl_init();
-		curl_setopt($curl, CURLOPT_URL, 'https://api.pushbullet.com/v2/pushes');
-		curl_setopt($curl, CURLOPT_USERPWD, $pushbullet_token);
-		curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST');
-		curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($data)]);
+		curl_setopt($curl, CURLOPT_URL, 'https://api.pushover.net/1/messages.json');
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($curl, CURLOPT_HEADER, false);
+	curl_setopt($curl, CURLOPT_SAFE_UPLOAD, true);
 		curl_exec($curl);
 		curl_close($curl);
+}
+function writelog($message,$alert = false) {
+	global $pushover_token, $pushover_user, $pushbullet_token, $autominer_dir, $rig;
+
+	// If $alert is true, send an alert with this log message
+	if($alert) {
+		$alert_message = "[$rig] " . $message;
+					if (!empty($pushbullet_token)) {
+							pushbullet($alert_message);
+					}
+					if (!empty($pushover_token) && !empty($pushover_user)) {
+							pushover($alert_message);
+					}
 	}
-	function pushover($msg) {
-		global $pushover_token;
-		global $pushover_user;
-
-		$data = array(
-			'token' => $pushover_token,
-			'user' => $pushover_user,
-			'title' => 'ethOS Autominer',
-			'message' => $msg,
-		);
-
-        	$curl = curl_init();
-        	curl_setopt($curl, CURLOPT_URL, 'https://api.pushover.net/1/messages.json');
-        	curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
-        	curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($curl, CURLOPT_SAFE_UPLOAD, true);
-        	curl_exec($curl);
-        	curl_close($curl);
-   	}
-	function writelog($message,$alert = false) {
-		global $pushover_token, $pushover_user, $pushbullet_token, $autominer_dir, $rig;
-
-		// If $alert is true, send an alert with this log message
-		if($alert) {
-			$alert_message = "[$rig] " . $message;
-                        if (!empty($pushbullet_token)) {
-                                pushbullet($alert_message);
-                        }
-                        if (!empty($pushover_token) && !empty($pushover_user)) {
-                                pushover($alert_message);
-                        }
-		}
-		// Write to switcher.log including timestamp
-		$log_message = "[$rig] " . date('m/d/Y H:i:s') . " - " . $message;
-		file_put_contents($autominer_dir . 'switcher.log', $log_message . "\r\n", FILE_APPEND | LOCK_EX);
-	}
+	// Write to switcher.log including timestamp
+	$log_message = "[$rig] " . date('m/d/Y H:i:s') . " - " . $message;
+	file_put_contents($autominer_dir . 'switcher.log', $log_message . "\r\n", FILE_APPEND | LOCK_EX);
+}
