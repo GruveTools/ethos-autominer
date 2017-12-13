@@ -237,7 +237,7 @@ function get_whattomine($url) {
 		$json_coins = file_get_contents($cache_hash);
 	} else {
 		$json_coins = file_get_contents($url);
-		file_put_contents($cache_hash, $json_coins);
+		file_put_contents($cache_hash, $json_coins, LOCK_EX);
 	}
 
 	$data_coins = json_decode($json_coins, true);
