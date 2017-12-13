@@ -65,13 +65,8 @@ for ($i = 0; $i < count($local_conf); $i++) {
   <div class="container-fluid">
     <div class="row">
 
-      <div class="col-sm-4">
+      <div class="col-sm-8">
         <div id="chart-hashrate"></div>
-        <br>
-      </div>
-
-      <div class="col-sm-4">
-        <div id="chart-temp"></div>
         <br>
       </div>
 
@@ -87,6 +82,19 @@ for ($i = 0; $i < count($local_conf); $i++) {
             </div>
           </div>
         </div>
+        <br>
+      </div>
+
+    </div>
+
+    <div class="row">
+
+      <div class="col-sm-8">
+        <div id="chart-temp"></div>
+        <br>
+      </div>
+
+      <div class="col-sm-4">
         <br>
       </div>
 
