@@ -189,6 +189,7 @@ function pushbullet($msg) {
 	curl_exec($curl);
 	curl_close($curl);
 }
+
 function pushover($msg) {
 	global $pushover_token;
 	global $pushover_user;
@@ -208,6 +209,7 @@ function pushover($msg) {
 	curl_exec($curl);
 	curl_close($curl);
 }
+
 function writelog($message,$alert = false) {
 	global $pushover_token, $pushover_user, $pushbullet_token, $autominer_dir, $rig;
 
