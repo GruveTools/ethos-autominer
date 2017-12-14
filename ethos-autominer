@@ -120,6 +120,7 @@ if(!file_exists($lock_file))
 		$current_coin = '';
 		if (file_exists($autominer_dir . 'current_coin.txt')) {
 			$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
+			$current_coin_mtime = filemtime($autominer_dir . 'current_coin.txt');
 		}
 
 		gather();
@@ -127,9 +128,28 @@ if(!file_exists($lock_file))
 		if($new_coin == $current_coin)
 			return;
 
-		$coin_difference = $profits[$new_coin] - $profits[$current_coin];
-		if(($coin_difference < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
-			$noswitch_msg = "Current coin (" . $current_coin . ") is more profitable (". $profits[$current_coin] . "%) which is " . $coin_difference . "% more than ".$new_coin.", not switching. Threshold is $switch_threshold%\r\n";
+		// Check minimum coin duration
+		$current_coin_minduration = $coins[$current_coin]['minduration'];
+		echo $coins[$current_coin]['minduration'];
+		$current_coin_minduration_sec = $coins[$current_coin]['minduration']*60*60;
+		$coin_duration_diff = time() - $current_coin_mtime;
+		$coin_duration_diff_min = round($coin_duration_diff / 60);
+		print_r($coins);                
+		echo "Current coin ".$current_coin." minimum duration: " . $current_coin_minduration. " Difference compared to current_coin.txt: " . $coin_duration_diff;
+		if((!empty($current_coin_minduration)) && (empty($force_coin))) {
+			if($current_coin_minduration_sec >= $coin_duration_diff) {
+				//echo $current_coin_minduration_sec. " " . $coin_duration_diff;
+				$noswitch_msg = "Current coin (".$current_coin.") has a minimum mining duration of ".$current_coin_minduration." hour(s), not switching. ".$coin_duration_diff_min." minutes have lapsed.";
+				echo " " . $noswitch_msg;
+				writelog($noswitch_msg);
+				return;
+			}
+		}
+
+		// If $switch_threshold is set and the profit difference is less than the threshold, do not continue
+		$coin_profit_diff = $profits[$new_coin] - $profits[$current_coin];
+		if(($coin_profit_diff < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
+			$noswitch_msg = "Current coin (" . $current_coin . ") is more profitable (". $profits[$current_coin] . "%) which is " . $coin_profit_diff . "% more than ".$new_coin.", not switching. Threshold is $switch_threshold%";
 			echo " " . $noswitch_msg;
 			writelog($noswitch_msg);
 			return;
