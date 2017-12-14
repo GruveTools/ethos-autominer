@@ -19,7 +19,7 @@ Keen.ready(function(){
 
   temperature_timeline = new Keen.Dataviz()
   .el('#chart-temp')
-  .type('area')
+  .type('line')
   .height(280)
   .stacked(false)
   .title('Temperature by GPU')
