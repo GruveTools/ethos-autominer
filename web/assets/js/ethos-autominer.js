@@ -89,6 +89,7 @@ function fetchPanelTemp() {
 function fetchPanelPools() {
   var since = (new Date().getTime() / 1000) - 86400;
   jQuery.getJSON('/chart.php?since=' + since, function(data) {
+    jQuery('#current-config').html(data.current_config);
     pools_pie
       .data(data)
       .sortGroups('desc')

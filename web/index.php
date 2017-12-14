@@ -56,7 +56,7 @@ for ($i = 0; $i < count($local_conf); $i++) {
       <div class="navbar-collapse collapse">
         <ul class="nav navbar-nav navbar-left">
             <li><a href="#">Rig: <?php echo $rig; ?></a></li>
-            <li><a href="#">Current coin: <?php echo $current_coin; ?></a></li>
+            <li><a href="#">Current config: <span id="current-config"></span></a></li>
         </ul>
       </div>
     </div>
