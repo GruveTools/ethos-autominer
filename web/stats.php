@@ -34,4 +34,22 @@ for ($i = 0; $i < count($db->stats); $i++) {
     }
 }
 
+$hashrate_rows = $hashrate_data->result;
+$hashrate_reduced = [];
+
+$total_points = count($hashrate_rows);
+if ($total_points > 100) {
+    $jump = $total_points / 100;
+    $jump = floor($jump);
+    if ($jump >= 1) {
+        for ($i = 0; $i < $total_points; $i++) {
+            if ($i % $jump == 0) {
+                array_push($hashrate_reduced, $hashrate_rows[$i]);
+            }
+        }
+    }
+}
+
+$hashrate_data->result = $hashrate_reduced;
+
 echo json_encode($hashrate_data);
