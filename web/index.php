@@ -95,6 +95,7 @@ for ($i = 0; $i < count($local_conf); $i++) {
       </div>
 
       <div class="col-sm-4">
+        <div id="chart-pools"></div>
         <br>
       </div>
 

@@ -25,12 +25,23 @@ Keen.ready(function(){
   .title('Temperature by GPU')
   .prepare();
 
+  // Minutes by Pool (pie)
+
+  pools_pie = new Keen.Dataviz()
+  .el('#chart-pools')
+  .type('pie')
+  .height(280)
+  .title('Time by Config')
+  .prepare();
+
   fetchPanelData();
   fetchPanelHashrate();
   fetchPanelTemp();
+  fetchPanelPools();
   setInterval(fetchPanelData, refresh_interval * 1000);
   setInterval(fetchPanelHashrate, refresh_interval * 1000);
   setInterval(fetchPanelTemp, refresh_interval * 1000);
+  setInterval(fetchPanelPools, refresh_interval * 1000);
 });
 
 function fetchPanelData() {
@@ -56,22 +67,30 @@ function fetchPanelData() {
 }
 
 function fetchPanelHashrate() {
-  var since = (new Date().getTime() / 1000) - 1440;
+  var since = (new Date().getTime() / 1000) - 86400;
   jQuery.getJSON('/stats.php?metric=miner_hashes&since=' + since, function(data) {
     hashrate_timeline
       .data(data)
-      .stacked(true)
       .sortGroups('desc')
       .render();
   });
 }
 
 function fetchPanelTemp() {
-  var since = (new Date().getTime() / 1000) - 1440;
+  var since = (new Date().getTime() / 1000) - 86400;
   jQuery.getJSON('/stats.php?metric=temp&since=' + since, function(data) {
     temperature_timeline
       .data(data)
-      .stacked(false)
+      .sortGroups('desc')
+      .render();
+  });
+}
+
+function fetchPanelPools() {
+  var since = (new Date().getTime() / 1000) - 86400;
+  jQuery.getJSON('/chart.php?since=' + since, function(data) {
+    pools_pie
+      .data(data)
       .sortGroups('desc')
       .render();
   });
