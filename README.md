@@ -11,7 +11,7 @@ To get up and running, you need to do the following:
 This script will install to `ethos-autominer` in your home directory, add it to your PATH, and add a cron entry to start it running:
 
 ```
-curl -o- https://raw.githubusercontent.com/Japh/ethos-autominer/installer/install-autominer.sh | bash
+curl -o- https://raw.githubusercontent.com/Japh/ethos-autominer/master/install-autominer.sh | bash
 ```
 
 ### Alternative manual install
