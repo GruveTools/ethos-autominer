@@ -187,6 +187,14 @@ autominer_do_install() {
     # shellcheck disable=SC2016
   fi
 
+  if ! command crontab -l | grep -qc '/ethos-autominer'; then
+    echo "=> Appending ethOS Autominer to crontab"
+    command crontab -l > autominer.cron && echo "* * * * * ${PROFILE_INSTALL_DIR}/ethos-autominer 2>&1 > /dev/null" >> autominer.cron && crontab autominer.cron && rm autominer.cron
+    #command printf "${SOURCE_STR}" >> "$AUTOMINER_PROFILE"
+  else
+    echo "=> ethOS Autominer already in crontab"
+  fi
+
   # Source ethOS Autominer
   # shellcheck source=/dev/null
   #\. "$(autominer_install_dir)/ethos-autominer"
