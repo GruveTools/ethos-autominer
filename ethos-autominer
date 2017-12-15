@@ -140,6 +140,7 @@ if(!file_exists($lock_file))
 		uasort($profits, 'float_rsort');
 		$new_coin = key($profits);
 		$new_profit = current($profits);
+		$new_cfg = find_config($new_coin);
 
 		if (!empty($force_coin)) {
 			echo " Forcing switch to " . $force_coin . "\r\n";
@@ -153,6 +154,7 @@ if(!file_exists($lock_file))
 			$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
 			$current_coin_mtime = filemtime($autominer_dir . 'current_coin.txt');
 		}
+		$current_cfg = find_config($current_coin);
 
 		gather();
 
@@ -164,6 +166,8 @@ if(!file_exists($lock_file))
 
 		if(!empty($new_cfg->mine_duration)) {
 			$mine_duration = $new_cfg->mine_duration;
+		} else {
+			$mine_duration = $config->settings->mine_duration;
 		}
 
 		$mine_duration_sec = $mine_duration * 60 * 60;
@@ -181,8 +185,8 @@ if(!file_exists($lock_file))
 
 		// Check profitability against threshold
 		$coin_profit_diff = $profits[$new_coin] - $profits[$current_coin];
-		if(($coin_profit_diff < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
-			$noswitch_msg = "New coin (" . $new_coin . ") is " . $coin_profit_diff . "% more profitable than current coin (" . $current_coin . "), however does not meet the switch threshold (" . $switch_threshold . "%).";
+		if(($coin_profit_diff < $config->settings->switch_threshold) && (empty($force_coin)) && !empty($config->settings->switch_threshold)) {
+			$noswitch_msg = "New coin (" . $new_coin . ") is " . $coin_profit_diff . "% more profitable than current coin (" . $current_coin . "), however does not meet the switch threshold (" . $config->settings->switch_threshold . "%).";
 			echo " " . $noswitch_msg;
 			writelog($noswitch_msg);
 			return;
@@ -191,7 +195,6 @@ if(!file_exists($lock_file))
 		// Switch coin
 		file_put_contents($autominer_dir . 'current_coin.txt', $new_coin, LOCK_EX);
 
-		$current_cfg = find_config($current_coin);
 		if($new_cfg->config != $current_cfg->config) {
 			$output = '';
 			if(!$dry_run) {
