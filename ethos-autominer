@@ -6,10 +6,11 @@
  * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
  */
 
-global $dry_run, $pushbullet_token, $pushover_user, $pushover_token, $home_dir, $autominer_dir, $switch_threshold;
+global $dry_run, $pushbullet_token, $pushover_user, $pushover_token, $home_dir, $autominer_dir, $switch_threshold, $global_minduration;
 
 $dry_run = false;
-$switch_threshold = '';
+$switch_threshold = ''; // This should be set in your config.php
+$global_minduration = ''; // This should be set in your config.php
 $pushbullet_token = ''; // This should be set in your config.php
 $pushover_token = ''; // This should be set in your config.php
 $pushover_user = ''; // This should be set in your config.php
@@ -125,20 +126,18 @@ if(!file_exists($lock_file))
 
 		gather();
 
+		// Check if new coin is same as current coin
 		if($new_coin == $current_coin)
 			return;
 
-		// Check minimum coin duration
+		// Begin duration thresholds checks, per coin or global
+		// Check minimum duration per coin
 		$current_coin_minduration = $coins[$current_coin]['minduration'];
-		echo $coins[$current_coin]['minduration'];
 		$current_coin_minduration_sec = $coins[$current_coin]['minduration']*60*60;
 		$coin_duration_diff = time() - $current_coin_mtime;
 		$coin_duration_diff_min = round($coin_duration_diff / 60);
-		print_r($coins);                
-		echo "Current coin ".$current_coin." minimum duration: " . $current_coin_minduration. " Difference compared to current_coin.txt: " . $coin_duration_diff;
 		if((!empty($current_coin_minduration)) && (empty($force_coin))) {
-			if($current_coin_minduration_sec >= $coin_duration_diff) {
-				//echo $current_coin_minduration_sec. " " . $coin_duration_diff;
+			if($current_coin_minduration_sec > $coin_duration_diff) {
 				$noswitch_msg = "Current coin (".$current_coin.") has a minimum mining duration of ".$current_coin_minduration." hour(s), not switching. ".$coin_duration_diff_min." minutes have lapsed.";
 				echo " " . $noswitch_msg;
 				writelog($noswitch_msg);
@@ -146,7 +145,19 @@ if(!file_exists($lock_file))
 			}
 		}
 
-		// If $switch_threshold is set and the profit difference is less than the threshold, do not continue
+		// Check global minimum duration
+		$global_minduration_sec = $global_minduration*60*60;
+		if((!empty($global_minduration)) && (empty($force_coin))) {
+			if($global_minduration_sec > $coin_duration_diff) {
+				$noswitch_msg = "Global minimum mining duration of ".$global_minduration." hour(s) set, not switching. ".$coin_duration_diff_min." minutes have lapsed.";
+				echo " " . $noswitch_msg;
+				writelog($noswitch_msg);
+				return;
+			}
+		}
+		// End duration threshold checks
+
+		// Check profitability against threshold
 		$coin_profit_diff = $profits[$new_coin] - $profits[$current_coin];
 		if(($coin_profit_diff < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
 			$noswitch_msg = "Current coin (" . $current_coin . ") is more profitable (". $profits[$current_coin] . "%) which is " . $coin_profit_diff . "% more than ".$new_coin.", not switching. Threshold is $switch_threshold%";
@@ -175,7 +186,7 @@ if(!file_exists($lock_file))
 		}
 
 		// Log and alert the switch event
-		$log_msg = "Switching from $current_coin to $new_coin. $new_coin is ".$coin_difference."% more profitable.";
+		$log_msg = "Switching from $current_coin to $new_coin. $new_coin is ".$coin_profit_diff."% more profitable. Mined ".$current_coin." for ".$coin_duration_diff_min." minutes.";
 		writelog($log_msg,true);
 	}
 }
