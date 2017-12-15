@@ -1,0 +1,33 @@
+{
+  "settings": {
+    "whattomine_url": "http://whattomine.com/coins.json",
+    "switch_threshold": 10,
+    "mine_duration": 1,
+    "pushbullet": {
+      "token": ""
+    },
+    "pushover": {
+      "user": "",
+      "token": ""
+    }
+  },
+  "configs": [
+    {
+      "coin": "ETH",
+      "config": "eth.conf",
+      "mine_duration": 2
+    },
+    {
+      "coin": "BTG",
+      "config": "btg.conf"
+    },
+    {
+      "coin": "ZEC",
+      "config": "zec.conf"
+    },
+    {
+      "coin": "MONA",
+      "config": "mona.conf"
+    }
+  ]
+}
