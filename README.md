@@ -23,14 +23,14 @@ curl -o- https://raw.githubusercontent.com/Japh/ethos-autominer/installer/instal
     `mkdir ~/.autominer`
 
 3. Copy the sample config file to your configuration directory:
-    `cp ~/ethos-autominer/config.sample.php ~/.autominer/config.php`
+    `cp ~/ethos-autominer/config.sample.json ~/.autominer/config.json`
 
-4. Edit your `config.php` to set your preferences. The following options in particular:
-    * Set the `$whattomine_url` by going to [whattomine.com](https://whattomine.com), using the calulator as per your rig setup, and then copy and pasting the URL, replacing `whattomine.com/coins` with `whattomine.com/coins.json` but leaving the rest the same.
-    * Set the various `$coins` configs to refer to config files that you have for the relevant coins, which you should copy into `~/.autominer/configs/`.
+4. Edit your `config.json` to set your preferences. The following options in particular:
+    * Set the `whattomine_url` by going to [whattomine.com](https://whattomine.com), using the calulator as per your rig setup, and then copy and pasting the URL, replacing `whattomine.com/coins` with `whattomine.com/coins.json` but leaving the rest the same.
+    * Set the various `configs` to refer to config files that you have for the relevant coins, which you should copy into `~/.autominer/configs/`.
 
-5. Setup a crontask to run the autominer script every 10 mins, run `crontab -e` to begin editing and add the following line:
-    `*/10 * * * * /home/ethos/ethos-autominer/ethos-autominer`
+5. Setup a crontask to run the autominer script every minute, run `crontab -e` to begin editing and add the following line:
+    `* * * * * /home/ethos/ethos-autominer/ethos-autominer`
 
 You can also run the script manually, and if you pass `--dry-run` to the script, it won't do any of the miner restarting, _but will still switch configs_.
 
