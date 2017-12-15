@@ -140,13 +140,14 @@ if(!file_exists($lock_file))
 		uasort($profits, 'float_rsort');
 		$new_coin = key($profits);
 		$new_profit = current($profits);
-		$new_cfg = find_config($new_coin);
 
 		if (!empty($force_coin)) {
 			echo " Forcing switch to " . $force_coin . "\r\n";
 			$new_coin = $force_coin;
 			file_put_contents($lock_file, $force_coin, LOCK_EX);
 		}
+
+		$new_cfg = find_config($new_coin);
 
 		// Get current active coin
 		$current_coin = '';
