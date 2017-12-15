@@ -132,8 +132,8 @@ if(!file_exists($lock_file))
 
 		// Begin duration thresholds checks, per coin or global
 
-		if(!empty($coins[$current_coin]['duration'])) {
-			$mine_duration = $coins[$current_coin]['duration'];
+		if(!empty($coins[$current_coin]['mine_duration'])) {
+			$mine_duration = $coins[$current_coin]['mine_duration'];
 		}
 
                 $mine_duration_sec = $mine_duration*60*60;
