@@ -6,6 +6,16 @@ _Backup your `local.conf` before running this script. You may also choose to run
 
 To get up and running, you need to do the following:
 
+### Install script
+
+This script will install to `ethos-autominer` in your home directory, add it to your PATH, and add a cron entry to start it running:
+
+```
+curl -o- https://raw.githubusercontent.com/Japh/ethos-autominer/installer/install-autominer.sh | bash
+```
+
+### Alternative manual install
+
 1. First, clone the repository to your rig:
     `git clone https://github.com/Japh/ethos-autominer ~/ethos-autominer/`
 
