@@ -195,14 +195,16 @@ autominer_do_install() {
     echo "=> ethOS Autominer already in crontab"
   fi
 
+  command ${PROFILE_INSTALL_DIR}/ethos-autominer --setup "${PROFILE_INSTALL_DIR}/"
+
   # Source ethOS Autominer
   # shellcheck source=/dev/null
   #\. "$(autominer_install_dir)/ethos-autominer"
 
   autominer_reset
 
-  echo "=> Close and reopen your terminal to start using ethOS Autominer or run the following to use it now:"
-  command printf "${SOURCE_STR}"
+  #echo "=> Close and reopen your terminal to start using ethOS Autominer or run the following to use it now:"
+  #command printf "${SOURCE_STR}"
 }
 
 #

@@ -10,11 +10,15 @@ global $config;
 global $dry_run, $home_dir, $autominer_dir;
 
 $dry_run = false;
+$setup = false;
 $force_coin = '';
 
 $rig = gethostname();
 
 for ($i = 0; $i < count($argv); $i++) {
+	if ($argv[$i] == '--setup') {
+		$setup = $argv[$i+1];
+	}
 	if ($argv[$i] == '--dry-run') {
 		$dry_run = true;
 	}
@@ -50,6 +54,41 @@ if(!file_exists($autominer_dir . 'configs/')) {
 
 // Get the current hour
 $hour = date('H', time());
+
+if ($setup) {
+	if (file_exists($autominer_dir . 'config.json')) {
+		exit('You already have a config.json, please rename it to back it up before running setup.' . "\n");
+	}
+
+	$config = json_decode(file_get_contents($setup . 'config.sample.json'));
+
+	echo "Please enter the symbol for the coin you're currently mining: ";
+	$symbol = fgets(STDIN, 2048); // read the special file to get the user input from keyboard
+	$symbol = trim($symbol);
+
+	$setup_configs = [];
+	$setup_cfg = new \stdClass();
+	$setup_cfg->coin = strtoupper($symbol);
+	$setup_cfg->config = strtolower($symbol) . '.conf';
+	array_push($setup_configs, $setup_cfg);
+
+	copy($home_dir . 'local.conf', $autominer_dir . 'configs/' . $setup_cfg->config);
+
+	$config->configs = $setup_configs;
+
+	echo "Please go to whattomine.com, enter your rig details, and press 'calculate', then copy and paste the very long web address here:\n";
+	$whattomine_paste = fgets(STDIN, 2048);
+
+	if(strpos($whattomine_paste, '.json') !== false) {
+		$config->settings->whattomine_url = $whattomine_paste;
+	} else {
+		$config->settings->whattomine_url = str_replace('whattomine.com/coins', 'whattomine.com/coins.json', $whattomine_paste);
+	}
+
+	file_put_contents($autominer_dir . 'config.json', json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+	exit("\n=> Setup complete.\n");
+}
 
 // Config files for all algos we'd like to allow switching between
 if(!file_exists($autominer_dir . 'config.json')) {
