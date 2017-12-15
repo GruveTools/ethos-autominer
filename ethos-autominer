@@ -6,27 +6,21 @@
  * Original code by AllCrypto https://www.youtube.com/watch?v=vf0doK-j54g and http://textuploader.com/dl3w5
  */
 
-global $dry_run, $pushbullet_token, $pushover_user, $pushover_token, $home_dir, $autominer_dir, $switch_threshold, $mine_duration;
+global $config;
+global $dry_run, $home_dir, $autominer_dir;
 
 $dry_run = false;
-$switch_threshold = ''; // This should be set in your config.php
-$mine_duration = 0; // This should be set in your config.php
-$pushbullet_token = ''; // This should be set in your config.php
-$pushover_token = ''; // This should be set in your config.php
-$pushover_user = ''; // This should be set in your config.php
+$setup = false;
 $force_coin = '';
-$whattomine_url = ''; // This should be set in your config.php
 
 $rig = gethostname();
 
 for ($i = 0; $i < count($argv); $i++) {
+	if ($argv[$i] == '--setup') {
+		$setup = $argv[$i+1];
+	}
 	if ($argv[$i] == '--dry-run') {
 		$dry_run = true;
-	}
-	if ($argv[$i] == '--pushbullet') {
-		if (!empty($argv[$i+1])) {
-			$pushbullet_token = $argv[$i+1];
-		}
 	}
 	if ($argv[$i] == '--force') {
 		if (!empty($argv[$i+1])) {
@@ -61,18 +55,53 @@ if(!file_exists($autominer_dir . 'configs/')) {
 // Get the current hour
 $hour = date('H', time());
 
-// Config files for all algos we'd like to allow switching between
-$coins = false;
-if(!file_exists($autominer_dir . 'config.php')) {
-	exit("Missing a config.php file, please use the config.sample.php file as a template.\r\n");
+if ($setup) {
+	if (file_exists($autominer_dir . 'config.json')) {
+		exit('You already have a config.json, please rename it to back it up before running setup.' . "\n");
+	}
+
+	$config = json_decode(file_get_contents($setup . 'config.sample.json'));
+
+	echo "Please enter the symbol for the coin you're currently mining: ";
+	$symbol = fgets(STDIN, 2048); // read the special file to get the user input from keyboard
+	$symbol = trim($symbol);
+
+	$setup_configs = [];
+	$setup_cfg = new \stdClass();
+	$setup_cfg->coin = strtoupper($symbol);
+	$setup_cfg->config = strtolower($symbol) . '.conf';
+	array_push($setup_configs, $setup_cfg);
+
+	copy($home_dir . 'local.conf', $autominer_dir . 'configs/' . $setup_cfg->config);
+
+	$config->configs = $setup_configs;
+
+	echo "Please go to whattomine.com, enter your rig details, and press 'calculate', then copy and paste the very long web address here:\n";
+	$whattomine_paste = fgets(STDIN, 2048);
+
+	if(strpos($whattomine_paste, '.json') !== false) {
+		$config->settings->whattomine_url = $whattomine_paste;
+	} else {
+		$config->settings->whattomine_url = str_replace('whattomine.com/coins', 'whattomine.com/coins.json', $whattomine_paste);
+	}
+
+	file_put_contents($autominer_dir . 'config.json', json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+	exit("\n=> Setup complete.\n");
 }
-require_once($autominer_dir . 'config.php');
+
+// Config files for all algos we'd like to allow switching between
+if(!file_exists($autominer_dir . 'config.json')) {
+	exit("Missing a config.json file, please use the config.sample.json file as a template.\r\n");
+}
+
+$config = json_decode(file_get_contents($autominer_dir . 'config.json'));
 
 // Check there's no no-autoswitch file in the scripts directory, manually creating this file will stop switching
 if(!file_exists($lock_file))
 {
 	// Get current profitability from whattomine, still not sure if the querystring parameters are used
-	$data_coins = get_whattomine($whattomine_url);
+	$data_coins = get_whattomine($config->settings->whattomine_url);
 	$profits = false;
 
 	if(isset($data_coins['coins']) && count($data_coins['coins']) > 0)
@@ -80,14 +109,15 @@ if(!file_exists($lock_file))
 		// Run through all coins returned by whattomine and get profitability of ones we're interested in
 		foreach($data_coins['coins'] as $label => $coin)
 		{
-			if(!isset($coins[$coin['tag']]))
+			$new_cfg = find_config($coin['tag']);
+			if(!$new_cfg)
 				continue; // Skip unsupported coins.
 			if($coin['lagging'])
 				continue; // Skip lagging coins.
 
 			$tag = $coin['tag'];
-			$hash_rate = $coins[$tag]['hash_rate'];
-			$coin_id = $coin['id'];
+			//$hash_rate = $coins[$tag]['hash_rate'];
+			//$coin_id = $coin['id'];
 
 			$profits[$tag] = floatval($coin['profitability']);
 
@@ -110,6 +140,7 @@ if(!file_exists($lock_file))
 		uasort($profits, 'float_rsort');
 		$new_coin = key($profits);
 		$new_profit = current($profits);
+		$new_cfg = find_config($new_coin);
 
 		if (!empty($force_coin)) {
 			echo " Forcing switch to " . $force_coin . "\r\n";
@@ -123,6 +154,7 @@ if(!file_exists($lock_file))
 			$current_coin = file_get_contents($autominer_dir . 'current_coin.txt');
 			$current_coin_mtime = filemtime($autominer_dir . 'current_coin.txt');
 		}
+		$current_cfg = find_config($current_coin);
 
 		gather();
 
@@ -132,16 +164,18 @@ if(!file_exists($lock_file))
 
 		// Begin duration thresholds checks, per coin or global
 
-		if(!empty($coins[$current_coin]['duration'])) {
-			$mine_duration = $coins[$current_coin]['duration'];
+		if(!empty($new_cfg->mine_duration)) {
+			$mine_duration = $new_cfg->mine_duration;
+		} else {
+			$mine_duration = $config->settings->mine_duration;
 		}
 
-                $mine_duration_sec = $mine_duration*60*60;
-                $coin_duration_diff = time() - $current_coin_mtime;
-                $coin_duration_diff_min = round($coin_duration_diff / 60);
+		$mine_duration_sec = $mine_duration * 60 * 60;
+		$coin_duration_diff = time() - $current_coin_mtime;
+		$coin_duration_diff_min = round($coin_duration_diff / 60);
 		if( (!empty( $mine_duration )) && (empty($force_coin) )) {
 			if($coin_duration_diff < $mine_duration_sec) {
-				$noswitch_msg = "Current coin (".$current_coin.") has a minimum mining duration of ".$mine_duration." hour(s), not switching. ".$coin_duration_diff_min." minutes have lapsed.";
+				$noswitch_msg = "Current coin (" . $current_coin . ") has a minimum mining duration of " . $mine_duration . " hour(s), not switching. " . $coin_duration_diff_min . " minutes have lapsed.";
 				echo " " . $noswitch_msg;
 				writelog($noswitch_msg);
 				return;
@@ -151,8 +185,8 @@ if(!file_exists($lock_file))
 
 		// Check profitability against threshold
 		$coin_profit_diff = $profits[$new_coin] - $profits[$current_coin];
-		if(($coin_profit_diff < $switch_threshold) && (empty($force_coin)) && !empty($switch_threshold)) {
-			$noswitch_msg = "New coin (".$new_coin.") is ".$coin_profit_diff."% more profitable than current coin (".$current_coin."), however does not meet the switch threshold (".$switch_threshold."%).";
+		if(($coin_profit_diff < $config->settings->switch_threshold) && (empty($force_coin)) && !empty($config->settings->switch_threshold)) {
+			$noswitch_msg = "New coin (" . $new_coin . ") is " . $coin_profit_diff . "% more profitable than current coin (" . $current_coin . "), however does not meet the switch threshold (" . $config->settings->switch_threshold . "%).";
 			echo " " . $noswitch_msg;
 			writelog($noswitch_msg);
 			return;
@@ -161,10 +195,10 @@ if(!file_exists($lock_file))
 		// Switch coin
 		file_put_contents($autominer_dir . 'current_coin.txt', $new_coin, LOCK_EX);
 
-		if($coins[$new_coin]['config'] != $coins[$current_coin]['config']) {
+		if($new_cfg->config != $current_cfg->config) {
 			$output = '';
 			if(!$dry_run) {
-				$config_file = $coins[$new_coin]['config'];
+				$config_file = $new_cfg->config;
 				copy($autominer_dir . 'configs/' . $config_file, $home_dir . 'local.conf');
 				sleep(5);
 				$output += shell_exec('/opt/ethos/bin/disallow 2>&1');
@@ -178,7 +212,7 @@ if(!file_exists($lock_file))
 		}
 
 		// Log and alert the switch event
-		$log_msg = "Switching to $new_coin. $new_coin is ".$coin_profit_diff."% more profitable. Mined ".$current_coin." for ".$coin_duration_diff_min." minutes.";
+		$log_msg = "Switching to " . $new_coin . ". " . $new_coin . " is " . $coin_profit_diff . "% more profitable. Mined " . $current_coin . " for " . $coin_duration_diff_min . " minutes.";
 		writelog($log_msg,true);
 	}
 }
@@ -192,7 +226,7 @@ function float_rsort($a, $b) {
 }
 
 function pushbullet($msg) {
-	global $pushbullet_token;
+	global $config;
 
 	$data = json_encode(array(
 		'type' => 'note',
@@ -203,7 +237,7 @@ function pushbullet($msg) {
 
 	$curl = curl_init();
 	curl_setopt($curl, CURLOPT_URL, 'https://api.pushbullet.com/v2/pushes');
-	curl_setopt($curl, CURLOPT_USERPWD, $pushbullet_token);
+	curl_setopt($curl, CURLOPT_USERPWD, $config->settings->pushbullet->token);
 	curl_setopt($curl, CURLOPT_CUSTOMREQUEST, 'POST');
 	curl_setopt($curl, CURLOPT_HTTPHEADER, ['Content-Type: application/json', 'Content-Length: ' . strlen($data)]);
 	curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
@@ -214,12 +248,11 @@ function pushbullet($msg) {
 }
 
 function pushover($msg) {
-	global $pushover_token;
-	global $pushover_user;
+	global $config;
 
 	$data = array(
-		'token' => $pushover_token,
-		'user' => $pushover_user,
+		'token' => $config->settings->pushover->token,
+		'user' => $config->settings->pushover->user,
 		'title' => 'ethOS Autominer',
 		'message' => $msg,
 	);
@@ -234,15 +267,15 @@ function pushover($msg) {
 }
 
 function writelog($message,$alert = false) {
-	global $pushover_token, $pushover_user, $pushbullet_token, $autominer_dir, $rig;
+	global $config, $autominer_dir, $rig;
 
 	// If $alert is true, send an alert with this log message
 	if($alert) {
 		$alert_message = "[$rig] " . $message;
-		if (!empty($pushbullet_token)) {
+		if (!empty($config->settings->pushbullet->token)) {
 			pushbullet($alert_message);
 		}
-		if (!empty($pushover_token) && !empty($pushover_user)) {
+		if (!empty($config->settings->pushover->token) && !empty($config->settings->pushover->user)) {
 			pushover($alert_message);
 		}
 	}
@@ -338,4 +371,18 @@ function gather() {
 
 	// Save to file
 	file_put_contents($autominer_dir . 'db.json', json_encode($gatherData, JSON_PRETTY_PRINT), LOCK_EX);
+}
+
+function find_config($tag) {
+	global $config;
+
+	$o = false;
+
+	foreach($config->configs as $c => $d) {
+		if ($d->coin == $tag) {
+			$o = $d;
+		}
+	}
+
+	return $o;
 }

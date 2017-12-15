@@ -4,7 +4,7 @@
 <?php
 $home_dir = '/home/ethos/';
 $ethos_autominer_dir = $home_dir . '.autominer/';
-require_once($ethos_autominer_dir . 'config.php');
+$config = json_decode(file_get_contents($ethos_autominer_dir . 'config.json'));
 $current_coin = file_get_contents($ethos_autominer_dir . 'current_coin.txt');
 $local_conf = file_get_contents($home_dir . 'local.conf');
 
