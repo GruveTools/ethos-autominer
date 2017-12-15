@@ -15,12 +15,21 @@
 	// To set a threshold for switching, specify a percentage value below, example:
 	// $switch_threshold = 25;
 	// This will only switch coins if the new coin is 25% more profitable than the current coin.
-	$switch_threshold = 10;
+	$switch_threshold = 0;
+
+	// To set a minimum mining duration, specify an hour value below, example:
+	// $mine_duration = 1;
+	// This will mine all coins for a minimum of 1 hour before switching to the new most profitable coin.
+	// This can also be set per coin instead if preferred, see BTG coin example below with the duration option
+	// A coin specific duration will take preference over the $mine_duration value if set
+	$mine_duration = 0;
 
 	$coins = [
 		'BTG' => array(
 			'hash_rate' => 0,
 			'config' => 'btg.conf',
+			// Set the minimum mining duration per coin
+			'duration' => 1,
 		),
 		'ETH' => array(
 			'hash_rate' => 0,
