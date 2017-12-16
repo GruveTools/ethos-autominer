@@ -11,13 +11,13 @@ To get up and running, you need to do the following:
 This script will install to `ethos-autominer` in your home directory, add it to your PATH, and add a cron entry to start it running:
 
 ```
-curl -o- https://raw.githubusercontent.com/Japh/ethos-autominer/master/install-autominer.sh | bash
+curl -o- https://raw.githubusercontent.com/GruveTools/ethos-autominer/master/install-autominer.sh | bash
 ```
 
 ### Alternative manual install
 
 1. First, clone the repository to your rig:
-    `git clone https://github.com/Japh/ethos-autominer ~/ethos-autominer/`
+    `git clone https://github.com/GruveTools/ethos-autominer ~/ethos-autominer/`
 
 2. Make your configuration directory:
     `mkdir ~/.autominer`
@@ -36,7 +36,12 @@ You can also run the script manually, and if you pass `--dry-run` to the script,
 
 ## Donations
 
-You can send BTC donations to `3Ckx1eocUY5fHinbDXZtCGGqwdT1VwGBa4`.
+You can send donations to any of the following addresses:
+
+* BTC: `3Ckx1eocUY5fHinbDXZtCGGqwdT1VwGBa4`
+* ETH: `0xB06EBE124C5fbb12E4551b1FEF647828D0d1AD74`
+* LTC: `LSXfQid4PZcAdgmEpUJXnJWppY7GKZ4uft`
+* GAS: `AbuMTAwKgGA4AWduDDEQ9UMBa8gnF5sgT2`
 
 ## Credits
 
