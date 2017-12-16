@@ -195,7 +195,11 @@ autominer_do_install() {
     echo "=> ethOS Autominer already in crontab"
   fi
 
-  command ${PROFILE_INSTALL_DIR}/ethos-autominer --setup "${PROFILE_INSTALL_DIR}/"
+  command ~/ethos-autominer --setup "${PROFILE_INSTALL_DIR}/"
+
+  echo "=> Adding web dashboard server to start up, ethos user password required..."
+  command sudo sed -i 's/exit 0/su - ethos -c "screen -dm -S web php -S 0.0.0.0:8080 -t \/home\/ethos\/ethos-autominer\/web\/"\n\nexit 0/' /etc/rc.local
+  command screen -dm -S web php -S 0.0.0.0:8080 -t /home/ethos/ethos-autominer/web/
 
   # Source ethOS Autominer
   # shellcheck source=/dev/null
