@@ -25,7 +25,7 @@ autominer_source() {
   AUTOMINER_METHOD="$1"
   local AUTOMINER_SOURCE_URL
   AUTOMINER_SOURCE_URL="$AUTOMINER_SOURCE"
-  AUTOMINER_SOURCE_URL="https://github.com/Japh/ethos-autominer.git"
+  AUTOMINER_SOURCE_URL="https://github.com/GruveTools/ethos-autominer.git"
   echo "$AUTOMINER_SOURCE_URL"
 }
 
