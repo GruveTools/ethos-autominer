@@ -165,18 +165,18 @@ if(!file_exists($lock_file))
 
 		// Begin duration thresholds checks, per coin or global
 
+		$mine_duration = $config->settings->mine_duration;
 		if(!empty($new_cfg->mine_duration)) {
 			$mine_duration = $new_cfg->mine_duration;
-		} else {
-			$mine_duration = $config->settings->mine_duration;
 		}
 
 		$mine_duration_sec = $mine_duration * 60 * 60;
 		$coin_duration_diff = time() - $current_coin_mtime;
 		$coin_duration_diff_min = round($coin_duration_diff / 60);
+		$hours = ($mine_duration == 1 ? 'hour' : 'hours');
 		if( (!empty( $mine_duration )) && (empty($force_coin) )) {
 			if($coin_duration_diff < $mine_duration_sec) {
-				$noswitch_msg = "Current coin (" . $current_coin . ") has a minimum mining duration of " . $mine_duration . " hour(s), not switching. " . $coin_duration_diff_min . " minutes have lapsed.";
+				$noswitch_msg = "Current coin (" . $current_coin . ") has a minimum mining duration of " . human_time($mine_duration_sec) . ", not switching. " . human_time($coin_duration_diff) . " have lapsed.";
 				echo " " . $noswitch_msg;
 				writelog($noswitch_msg);
 				return;
@@ -213,7 +213,7 @@ if(!file_exists($lock_file))
 		}
 
 		// Log and alert the switch event
-		$log_msg = "Switching to " . $new_coin . ". " . $new_coin . " is " . $coin_profit_diff . "% more profitable. Mined " . $current_coin . " for " . $coin_duration_diff_min . " minutes.";
+		$log_msg = "Switching to " . $new_coin . " for at least " . human_time($mine_duration_sec) . ". " . $new_coin . " is " . $coin_profit_diff . "% more profitable. Mined " . $current_coin . " for " . human_time($coin_duration_diff) . ".";
 		writelog($log_msg,true);
 	}
 }
@@ -386,4 +386,19 @@ function find_config($tag) {
 	}
 
 	return $o;
+}
+
+function human_time($seconds) {
+	$s = $seconds % 60;
+	$m = floor(($seconds % 3600) / 60);
+	$h = floor(($seconds % 86400) / 3600);
+	$d = floor($seconds / 86400);
+
+	$output = '';
+	$output .= (!empty($d) ? $d . ' day' . ($d == 1 ? '' : 's') . ' ' : '');
+	$output .= (!empty($h) ? $h . ' hour' . ($h == 1 ? '' : 's') . ' ' : '');
+	$output .= (!empty($m) ? $m . ' minute' . ($m == 1 ? '' : 's') . ' ' : '');
+	$output .= (!empty($s) ? $s . ' second' . ($s == 1 ? '' : 's') : '');
+
+	return trim($output);
 }
